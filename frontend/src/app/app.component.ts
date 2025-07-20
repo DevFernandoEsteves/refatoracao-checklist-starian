@@ -20,9 +20,13 @@ export class AppComponent implements OnInit {
   constructor(private http: HttpClient) {}
 
   ngOnInit() {
-    this.http.get(this.apiUrl).subscribe(
-      (data: any) => {
-        this.todos = data;
+    this.getTodos();
+  }
+
+  getTodos() {
+    this.http.get('http://localhost:8000/todo/list').subscribe(
+      (response: any) => {
+        this.todos = response.data;
       },
       (erro) => {
         console.error('Erro ao carregar tarefas:', erro);
@@ -36,14 +40,11 @@ export class AppComponent implements OnInit {
 
   addTodo() {
     if (!this.newTodo.title.trim()) return;
-    
-    this.http.post(this.apiUrl, {
-      title: this.newTodo.title
+    this.http.get('http://localhost:8000/todo/creare', {
+      params: { title: this.newTodo.title }
     }).subscribe(
       (response: any) => {
-        this.todos.push(response);
-        
-        this.newTodo = { title: '', completed: false };
+        this.getTodos();
       },
       (erro) => {
         console.error('Erro ao adicionar tarefa:', erro);
@@ -55,13 +56,14 @@ export class AppComponent implements OnInit {
         this.todos.push(fakeTodo);
         this.newTodo = { title: '', completed: false };
       }
-    );
+    )
   }
 
   removeTodo(id: number) {
-    this.http.delete(`${this.apiUrl}/${id}`).subscribe(
+    // this.http.delete(`http://localhost:8000/todo/problem-CSRF-token/${id}`).subscribe(
+    this.http.get(`http://localhost:8000/todo/delete/${id}`).subscribe(
       () => {
-        this.todos = this.todos.filter(todo => todo.id !== id);
+        this.getTodos();
       },
       (erro) => {
         console.error('Erro ao remover tarefa:', erro);
