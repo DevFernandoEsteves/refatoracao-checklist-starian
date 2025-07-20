@@ -1,74 +1,61 @@
 import { Component, OnInit } from '@angular/core';
-import { RouterOutlet } from '@angular/router';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { HttpClient, HttpClientModule } from '@angular/common/http';
+import { RouterOutlet } from '@angular/router';
+
+import { TodoService } from './services/todo.service';
+import { Todo } from './models/todo.model';
 
 @Component({
   selector: 'app-root',
   standalone: true,
-  imports: [RouterOutlet, CommonModule, FormsModule, HttpClientModule],
+  imports: [CommonModule, FormsModule, RouterOutlet],
   templateUrl: './app.component.html',
   styleUrl: './app.component.scss'
 })
+
 export class AppComponent implements OnInit {
   title = 'Todo List';
-  todos: any[] = [];
-  newTodo: any = { title: '', completed: false };
-  apiUrl = 'http://localhost:8000/tarefas';
+  todos: Todo[] = [];
+  newTodo: Todo = { id: 0, title: '', completed: false };
 
-  constructor(private http: HttpClient) {}
+  constructor(private todoService: TodoService) {}
 
-  ngOnInit() {
+  ngOnInit(): void {
     this.getTodos();
   }
 
-  getTodos() {
-    this.http.get('http://localhost:8000/todo/list').subscribe(
-      (response: any) => {
-        this.todos = response.data;
-      },
-      (erro) => {
-        console.error('Erro ao carregar tarefas:', erro);
-        this.todos = [
-          { id: 1, title: 'Tarefa offline 1', completed: false },
-          { id: 2, title: 'Tarefa offline 2', completed: true }
-        ];
+  getTodos(): void {
+    this.todoService.getTodos().subscribe((res) => {
+      if (Array.isArray(res)) {
+        this.todos = res;
+      } else {
+        console.error('Erro ao buscar todos:', res.message);
       }
-    );
+    });
   }
 
-  addTodo() {
-    if (!this.newTodo.title.trim()) return;
-    this.http.get('http://localhost:8000/todo/creare', {
-      params: { title: this.newTodo.title }
-    }).subscribe(
-      (response: any) => {
+  createTodo(): void {
+    const title = this.newTodo.title.trim();
+    if (!title) return;
+
+    this.todoService.createTodo(title).subscribe((res) => {
+      if ('data' in res) {
         this.getTodos();
-      },
-      (erro) => {
-        console.error('Erro ao adicionar tarefa:', erro);
-        const fakeTodo = {
-          id: Math.floor(Math.random() * 1000),
-          title: this.newTodo.title,
-          completed: false
-        };
-        this.todos.push(fakeTodo);
-        this.newTodo = { title: '', completed: false };
+      } else {
+        console.error('Erro ao adicionar todo:', res.message);
       }
-    )
+      this.newTodo.title = '';
+    });
   }
 
-  removeTodo(id: number) {
-    // this.http.delete(`http://localhost:8000/todo/problem-CSRF-token/${id}`).subscribe(
-    this.http.get(`http://localhost:8000/todo/delete/${id}`).subscribe(
-      () => {
+  removeTodo(id: number): void {
+    this.todoService.removeTodo(id).subscribe((res) => {
+      if ('erro' in res) {
+        console.error('Erro ao remover todo:', res.message);
+      } else {
         this.getTodos();
-      },
-      (erro) => {
-        console.error('Erro ao remover tarefa:', erro);
-        this.todos = this.todos.filter(todo => todo.id !== id);
       }
-    );
+    });
   }
 }
