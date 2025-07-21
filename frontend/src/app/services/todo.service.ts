@@ -13,7 +13,7 @@ import { TodosResponse } from '../models/response/todo-response.model';
 })
 
 export class TodoService {
-  private baseUrl = 'http://localhost:8000/todo';
+  private baseUrl = 'http://localhost:8000/api/todo';
 
   constructor(
     private http: HttpClient,
@@ -21,21 +21,20 @@ export class TodoService {
   ) {}
 
   getTodos(): Observable<Todo[] | ErrorResponse> {
-    return this.http.get<{ data: Todo[] }>(`${this.baseUrl}/list`).pipe(
+    return this.http.get<{ data: Todo[] }>(`${this.baseUrl}`).pipe(
       map(response => response.data),
       catchError(error => of(this.errorHandler.formatError('getTodos', error)))
     );
   }
 
   createTodo(title: string): Observable<TodosResponse | ErrorResponse> {
-    const params = new HttpParams().set('title', title);
-    return this.http.get<TodosResponse>(`${this.baseUrl}/creare`, { params }).pipe(
+    return this.http.post<TodosResponse>(`${this.baseUrl}`, { title }).pipe(
       catchError(error => of(this.errorHandler.formatError('createTodo', error)))
     );
   }
 
   removeTodo(id: number): Observable<TodosResponse | ErrorResponse> {
-    return this.http.get<TodosResponse>(`${this.baseUrl}/delete/${id}`).pipe(
+    return this.http.delete<TodosResponse>(`${this.baseUrl}/${id}`).pipe(
       catchError(error => of(this.errorHandler.formatError('removeTodo', error)))
     );
   }
